@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bohol Bus Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <!-- Subscription Page -->
+  <div id="subscription-screen" class="min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-lg">
+      <h2 class="text-xl font-bold mb-4">Choose Your Subscription</h2>
+      <div class="grid gap-4">
+        <div class="border p-4 rounded cursor-pointer hover:border-blue-400" onclick="subscribe('free_trial')">
+          <h3 class="text-lg font-semibold">Free Trial</h3>
+          <p>7-day access to Bohol Bus Tracker</p>
+        </div>
+        <div class="border p-4 rounded cursor-pointer hover:border-blue-400" onclick="openPayment('monthly')">
+          <h3 class="text-lg font-semibold">Monthly - ₱50</h3>
+          <p>30-day full access</p>
+        </div>
+        <div class="border p-4 rounded cursor-pointer hover:border-blue-400" onclick="openPayment('yearly')">
+          <h3 class="text-lg font-semibold">Yearly - ₱1000</h3>
+          <p>1-year unlimited access</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="payment-screen" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-md">
+      <h2 class="text-xl font-bold mb-4">Payment Options</h2>
+      <p class="mb-4">Please select a payment method:</p>
+      <button class="w-full bg-green-500 text-white px-4 py-2 rounded mb-3" onclick="completePayment()">Pay with GCash</button>
+      <button class="w-full bg-blue-500 text-white px-4 py-2 rounded mb-3" onclick="completePayment()">Pay with Bank</button>
+      <button class="w-full text-gray-500 mt-2 hover:underline" onclick="cancelPayment()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Login Page -->
+  <div id="login-screen" class="hidden min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <h1 class="text-2xl font-bold mb-4">Bus Trek Login</h1>
+      <input id="email" type="email" placeholder="Email" class="w-full mb-3 p-2 border rounded">
+      <input id="password" type="password" placeholder="Password" class="w-full mb-4 p-2 border rounded">
+      <button onclick="login()" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Login</button>
+      <p class="mt-4 text-sm text-center text-blue-600 cursor-pointer" onclick="backToSubscription()">&larr; Back to Subscription</p>
+    </div>
+  </div>
+
+  <!-- Dashboard Page -->
+  <div id="dashboard-screen" class="hidden min-h-screen flex">
+    <aside class="w-64 bg-white shadow h-screen p-4 space-y-4">
+      <h1 class="text-2xl font-bold mb-4 flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 16c0 .88.39 1.67 1 2.22V20a1 1 0 001 1h1a1 1 0 001-1v-1h8v1a1 1 0 001 1h1a1 1 0 001-1v-1.78A2.99 2.99 0 0020 16V6a4 4 0 00-4-4H8a4 4 0 00-4 4v10zm2 0v-2h2v2H6zm10 0v-2h2v2h-2zM6 10V6h12v4H6z"/>
+        </svg>
+        <span>Bustrek</span>
+      </h1>
+    
+      <button onclick="showTab('buses')" class="w-full text-left px-2 py-1 hover:bg-gray-200 rounded">🚌 Buses</button>
+      <button onclick="showTab('routes')" class="w-full text-left px-2 py-1 hover:bg-gray-200 rounded">📍 Routes</button>
+      <button onclick="showTab('schedule')" class="w-full text-left px-2 py-1 hover:bg-gray-200 rounded">📅 Schedule</button>
+      <button onclick="logout()" class="text-red-500 mt-8 px-2 py-1 hover:bg-red-100 rounded">🚪 Logout</button>
+    </aside>
+
+    <main class="flex-1 p-6">
+    
+
+      <div id="tab-buses" class="hidden mt-6">
+        <h2 class="text-lg font-semibold mb-4">Available Buses</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white p-4 rounded shadow">
+            <h3 class="font-bold">Bus 01</h3>
+            <p class="text-sm text-gray-600">Tagbilaran → Tubigon</p>
+            <button class="text-blue-500 mt-2 hover:underline" onclick="showMapWithSpeed('map1', [9.6477, 123.8552], [9.9447, 123.9617])">View Map</button>
+            <div id="map1" class="h-64 mt-4 hidden"></div>
+          </div>
+          <div class="bg-white p-4 rounded shadow">
+            <h3 class="font-bold">Bus 02</h3>
+            <p class="text-sm text-gray-600">Tagbilaran → Talibon</p>
+            <button class="text-blue-500 mt-2 hover:underline" onclick="showMapWithSpeed('map2', [9.6477, 123.8552], [10.1494, 124.3273])">View Map</button>
+            <div id="map2" class="h-64 mt-4 hidden"></div>
+          </div>
+          <div class="bg-white p-4 rounded shadow">
+            <h3 class="font-bold">Bus 03</h3>
+            <p class="text-sm text-gray-600">Tagbilaran → Anda</p>
+            <button class="text-blue-500 mt-2 hover:underline" onclick="showMapWithSpeed('map3', [9.6477, 123.8552], [9.7453, 124.5745])">View Map</button>
+            <div id="map3" class="h-64 mt-4 hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-routes" class="hidden grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div class="bg-white shadow-md rounded-lg p-4">
+          <h3 class="text-xl font-bold mb-2">Route A</h3>
+          <p class="text-gray-700">Tagbilaran → Dauis → Tubigon</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4">
+          <h3 class="text-xl font-bold mb-2">Route B</h3>
+          <p class="text-gray-700">Tagbilaran → Baclayon → Anda</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4">
+          <h3 class="text-xl font-bold mb-2">Route C</h3>
+          <p class="text-gray-700">Talibon → Ubay → Alicia → Jagna</p>
+        </div>
+        
+      </div>
+
+      <div id="tab-schedule" class="hidden mt-6">
+        <h2 class="text-lg font-semibold mb-2">Bus Schedule</h2>
+        <table class="table-auto w-full border border-gray-300">
+          <thead class="bg-gray-200">
+            <tr>
+              <th class="p-2">Bus</th>
+              <th class="p-2">From</th>
+              <th class="p-2">To</th>
+              <th class="p-2">Departure</th>
+              <th class="p-2">Arrival</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="p-2">Bus 01</td>
+              <td class="p-2">Tagbilaran</td>
+              <td class="p-2">Tubigon</td>
+              <td class="p-2">7:00 AM</td>
+              <td class="p-2">8:30 AM</td>
+            </tr>
+            <tr>
+              <td class="p-2">Bus 02</td>
+              <td class="p-2">Tagbilaran</td>
+              <td class="p-2">Talibon</td>
+              <td class="p-2">9:00 AM</td>
+              <td class="p-2">11:00 AM</td>
+            </tr>
+            <tr>
+              <td class="p-2">Bus 03</td>
+              <td class="p-2">Tagbilaran</td>
+              <td class="p-2">Anda</td>
+              <td class="p-2">10:00 AM</td>
+              <td class="p-2">1:30 PM</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let selectedPlan = '';
+    let mapInstance = null;
+    let speedInterval = null;
+
+     function showMapWithSpeed(mapId, start, end, startDesc = "Bus Terminal", endDesc = "Destination") {
+    document.querySelectorAll('[id^=map]').forEach(div => div.classList.add('hidden'));
+    const mapDiv = document.getElementById(mapId);
+    if (mapDiv) mapDiv.classList.remove('hidden');
+
+    if (window.mapInstance) {
+      window.mapInstance.remove();
+      clearInterval(window.speedInterval);
+    }
+
+    const map = L.map(mapId).setView(start, 10);
+    window.mapInstance = map;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const route = L.polyline([start, end], { color: 'blue' }).addTo(map);
+
+    const busIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61231.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    });
+
+    const marker = L.marker(start, { icon: busIcon }).addTo(map);
+    const speed = Math.floor(Math.random() * 30) + 40;
+    const departTime = getCurrentTime();
+
+    marker.bindPopup(
+      `🚌 <b>Speed:</b> ${speed} km/h<br>` +
+      `🕒 <b>Departure:</b> ${departTime}<br>` +
+      `📍 <b>From:</b> ${startDesc}`
+    ).openPopup();
+
+    const path = route.getLatLngs();
+    let i = 0;
+
+    window.speedInterval = setInterval(() => {
+      if (i >= path.length) {
+        clearInterval(window.speedInterval);
+        marker.setLatLng(end);
+        marker.bindPopup(
+          `🛑 <b>Arrived</b><br>` +
+          `🕒 <b>Arrival:</b> ${getCurrentTime()}<br>` +
+          `📍 <b>To:</b> ${endDesc}`
+        ).openPopup();
+        return;
+      }
+      marker.setLatLng(path[i]);
+      marker.getPopup().setContent(
+        `🚌 <b>Speed:</b> ${speed} km/h<br>` +
+        `🕒 <b>Time:</b> ${getCurrentTime()}<br>` +
+        `📍 <b>Status:</b> En route to ${endDesc}`
+      );
+      i++;
+    }, 800);
+  }
+
+  function getCurrentTime() {
+    const now = new Date();
+    return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+      document.querySelectorAll('[id^=map]').forEach(div => div.classList.add('hidden'));
+      const mapDiv = document.getElementById(mapId);
+      mapDiv.classList.remove('hidden');
+
+      if (mapInstance) {
+        mapInstance.remove();
+        clearInterval(speedInterval);
+      }
+
+      mapInstance = L.map(mapId).setView(start, 10);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(mapInstance);
+
+      const route = L.polyline([start, end], { color: 'blue' }).addTo(mapInstance);
+
+      const busIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61231.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+      });
+
+      const marker = L.marker(start, { icon: busIcon }).addTo(mapInstance);
+      let speed = Math.floor(Math.random() * 30) + 40;
+      marker.bindPopup(`🚌 Speed: ${speed} km/h`).openPopup();
+
+      const path = route.getLatLngs();
+      let i = 0;
+
+      speedInterval = setInterval(() => {
+        if (i >= path.length) {
+          clearInterval(speedInterval);
+          marker.bindPopup('🛑 Arrived').openPopup();
+          return;
+        }
+        marker.setLatLng(path[i]);
+        marker.getPopup().setContent(`🚌 Speed: ${speed} km/h`);
+        i++;
+      }, 800);
+    }
+
+    window.onload = () => {
+      document.getElementById('subscription-screen').classList.remove('hidden');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('dashboard-screen').classList.add('hidden');
+    };
+
+    function openPayment(plan) {
+      selectedPlan = plan;
+      document.getElementById('subscription-screen').classList.add('hidden');
+      document.getElementById('payment-screen').classList.remove('hidden');
+    }
+
+    function completePayment() {
+      localStorage.setItem('subscribed', selectedPlan);
+      document.getElementById('payment-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      alert(`Payment successful for ${selectedPlan.toUpperCase()}! Now log in.`);
+    }
+
+    function cancelPayment() {
+      document.getElementById('payment-screen').classList.add('hidden');
+      document.getElementById('subscription-screen').classList.remove('hidden');
+    }
+
+    function subscribe(plan) {
+      localStorage.setItem('subscribed', plan);
+      alert(`Subscribed to ${plan.toUpperCase()}! Now log in.`);
+      document.getElementById('subscription-screen').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+    }
+
+    function backToSubscription() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('subscription-screen').classList.remove('hidden');
+      localStorage.removeItem('subscribed');
+    }
+
+    function login() {
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('password').value;
+      const subscribed = localStorage.getItem('subscribed');
+
+      if (!email || !pass) {
+        alert("Please enter both email and password.");
+        return;
+      }
+
+      if (subscribed) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard-screen').classList.remove('hidden');
+        showTab('home');
+      } else {
+        alert("Please subscribe first.");
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('subscription-screen').classList.remove('hidden');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('subscribed');
+      location.reload();
+    }
+
+    function showTab(tab) {
+      ['home', 'buses', 'routes', 'schedule'].forEach(id =>
+        document.getElementById(`tab-${id}`)?.classList.add('hidden')
+      );
+      document.getElementById(`tab-${tab}`)?.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
